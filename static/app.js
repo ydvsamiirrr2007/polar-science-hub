@@ -7,7 +7,8 @@ const state = {
   lastQuestion: '',
   lastStudioPayload: null,
   lastDraft: '',
-  categoryColors: ['#56c6d2', '#f0a07d', '#9690e8', '#62bb9c', '#81b9d8', '#d7b867']
+  categoryColors: ['#56c6d2', '#f0a07d', '#9690e8', '#62bb9c', '#81b9d8', '#d7b867'],
+  analyticsCharts: {}
 };
 
 function escapeHtml(value = '') {
@@ -57,17 +58,18 @@ async function requestJson(url, options = {}) {
 }
 
 function switchPage(page) {
-  if (!['overview', 'library', 'assistant', 'studio'].includes(page)) page = 'overview';
+  if (!['overview', 'library', 'analytics', 'assistant', 'studio'].includes(page)) page = 'overview';
   state.currentPage = page;
   $$('.page-section').forEach(section => section.classList.add('hidden'));
   const target = $(`#page-${page}`);
   if (target) target.classList.remove('hidden');
   $$('.nav-item[data-page]').forEach(item => item.classList.toggle('active', item.dataset.page === page));
-  const names = { overview: 'Overview', library: 'Knowledge library', assistant: 'Ask Polar AI', studio: 'Media studio' };
+  const names = { overview: 'Overview', library: 'Knowledge library', analytics: 'Data analytics', assistant: 'Ask Polar AI', studio: 'Media studio' };
   $('#current-crumb').textContent = names[page];
   $('#sidebar').classList.remove('open');
   if (page === 'library') loadLibrary();
   if (page === 'overview') loadDashboard();
+  if (page === 'analytics') loadAnalytics();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -122,6 +124,115 @@ function renderCategoryChart(categories) {
     return `<div class="bar-column"><span class="bar-value">${count}</span><div class="bar" style="height:${height}px"></div><span class="bar-label" title="${escapeHtml(item.category)}">${escapeHtml(item.category)}</span></div>`;
   }).join('');
   legend.innerHTML = list.map((item, index) => `<div class="legend-item"><span class="legend-dot" style="background:${state.categoryColors[index % state.categoryColors.length]}"></span><div class="legend-copy"><span>${escapeHtml(item.category)}</span><strong>${item.count} ${Number(item.count) === 1 ? 'resource' : 'resources'}</strong></div></div>`).join('');
+}
+
+
+function formatNumber(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? number.toLocaleString() : '—';
+}
+
+function drawAnalyticsChart(canvasId, type, labels, values, label, horizontal = false) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !window.Chart) {
+    if (canvas) canvas.parentElement.innerHTML = '<div class="chart-unavailable">Charts need an internet connection to load their library.</div>';
+    return;
+  }
+  if (state.analyticsCharts[canvasId]) state.analyticsCharts[canvasId].destroy();
+  const palette = ['#45b9c4', '#7d7bd0', '#e39b76', '#61b49a', '#6c9cc0', '#d4b66e', '#e17f91', '#8ebc76', '#a7a1e5', '#82cbd0'];
+  state.analyticsCharts[canvasId] = new Chart(canvas, {
+    type,
+    data: { labels, datasets: [{ label, data: values, backgroundColor: labels.map((_, i) => palette[i % palette.length]), borderColor: type === 'line' ? '#2699a9' : undefined, borderWidth: type === 'line' ? 2 : 0, tension: 0.28, fill: type === 'line' ? false : undefined, borderRadius: type === 'bar' ? 5 : 0, maxBarThickness: 42 }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: horizontal ? 'y' : 'x',
+      plugins: { legend: { display: type === 'doughnut', position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, pointStyle: 'circle', padding: 14, color: '#6d8492', font: { family: 'DM Sans', size: 10 } } }, tooltip: { displayColors: true } },
+      scales: type === 'doughnut' ? {} : { x: { grid: { display: false }, ticks: { color: '#8296a2', font: { size: 9 }, maxRotation: horizontal ? 0 : 35, minRotation: 0 } }, y: { beginAtZero: true, grid: { color: '#edf2f4' }, ticks: { precision: 0, color: '#8296a2', font: { size: 9 } } } }
+    }
+  });
+}
+
+function analyticsPopularRow(item) {
+  return `<tr><td><div class="resource-name"><span class="resource-file-icon type-${typeClass(item.type || 'Article')}">${resourceIcon(item.type || 'Article')}</span><div><strong>${escapeHtml(item.title || 'Untitled')}</strong><small>${escapeHtml(item.category || 'General')}</small></div></div></td><td>${escapeHtml(item.type || '—')}</td><td>${escapeHtml(item.region || '—')}</td><td>${formatNumber(item.views)}</td><td>${formatNumber(item.downloads)}</td></tr>`;
+}
+
+async function loadAnalytics() {
+  try {
+    const data = await requestJson('/api/analytics');
+    const totals = data.totals || {};
+    $('#analytics-total-resources').textContent = formatNumber(totals.total_resources);
+    $('#analytics-dataset-count').textContent = formatNumber(totals.dataset_count);
+    $('#analytics-region-count').textContent = formatNumber(totals.region_count);
+    $('#analytics-engagement').textContent = formatNumber(Number(totals.total_views || 0) + Number(totals.total_downloads || 0));
+    $('#quality-missing-year').textContent = formatNumber(totals.missing_year_count);
+    $('#quality-missing-url').textContent = formatNumber(totals.missing_url_count);
+    $('#quality-missing-title').textContent = formatNumber(data.quality?.missing_title);
+    $('#quality-invalid-year').textContent = formatNumber(data.quality?.invalid_year);
+    $('#analytics-popular-rows').innerHTML = (data.popular || []).length ? data.popular.map(analyticsPopularRow).join('') : '<tr><td colspan="5" class="table-loading">No resource records yet.</td></tr>';
+    drawAnalyticsChart('analytics-type-chart', 'doughnut', (data.by_type || []).map(row => row.label), (data.by_type || []).map(row => Number(row.count)), 'Resources');
+    drawAnalyticsChart('analytics-region-chart', 'bar', (data.by_region || []).map(row => row.label), (data.by_region || []).map(row => Number(row.count)), 'Resources');
+    drawAnalyticsChart('analytics-year-chart', 'line', (data.by_year || []).map(row => String(row.label)), (data.by_year || []).map(row => Number(row.count)), 'Resources');
+    drawAnalyticsChart('analytics-topic-chart', 'bar', (data.by_category || []).map(row => row.label), (data.by_category || []).map(row => Number(row.count)), 'Resources', true);
+  } catch (error) {
+    toast(error.message || 'Unable to load analytics.', 'error', 'Analytics unavailable');
+  }
+}
+
+function renderCsvAnalysis(data) {
+  $('#csv-analysis-results').classList.remove('hidden');
+  $('#csv-result-filename').textContent = data.filename || 'Uploaded CSV';
+  $('#csv-rows').textContent = formatNumber(data.rows);
+  $('#csv-columns').textContent = formatNumber(data.columns);
+  $('#csv-missing').textContent = `${formatNumber(data.missing_cells)} (${data.missing_percent}%)`;
+  $('#csv-duplicates').textContent = formatNumber(data.duplicate_rows);
+  $('#csv-insights').innerHTML = (data.insights || []).map(line => `<p><span>✦</span>${escapeHtml(line)}</p>`).join('');
+  $('#csv-column-rows').innerHTML = (data.column_profile || []).map(column => `<tr><td><strong>${escapeHtml(column.name)}</strong></td><td>${escapeHtml(column.data_type)}</td><td>${formatNumber(column.missing_count)} <small>(${column.missing_percent}%)</small></td><td>${formatNumber(column.unique_values)}</td><td>${escapeHtml((column.examples || []).join(', ') || '—')}</td></tr>`).join('');
+  $('#csv-numeric-rows').innerHTML = (data.numeric_summary || []).length ? data.numeric_summary.map(column => `<tr><td><strong>${escapeHtml(column.column)}</strong></td><td>${formatNumber(column.count)}</td><td>${formatStat(column.mean)}</td><td>${formatStat(column.median)}</td><td>${formatStat(column.min)}</td><td>${formatStat(column.max)}</td><td>${formatStat(column.std_dev)}</td></tr>`).join('') : '<tr><td colspan="7" class="table-loading">No numeric columns were detected in this file.</td></tr>';
+  const categorical = data.categorical_summary || [];
+  $('#csv-categorical-summary').innerHTML = categorical.length ? categorical.map(group => `<article class="categorical-card"><h5>${escapeHtml(group.column)}</h5><div>${(group.values || []).map(item => `<span class="categorical-chip">${escapeHtml(item.value)} <strong>${formatNumber(item.count)}</strong></span>`).join('')}</div></article>`).join('') : '<p class="table-loading">No categorical columns were detected in this file.</p>';
+  const preview = data.preview || [];
+  if (!preview.length) {
+    $('#csv-preview-wrap').innerHTML = '<p class="table-loading">No preview rows available.</p>';
+  } else {
+    const columns = Object.keys(preview[0]);
+    $('#csv-preview-wrap').innerHTML = `<table class="resource-table analytics-data-table"><thead><tr>${columns.map(column => `<th>${escapeHtml(column)}</th>`).join('')}</tr></thead><tbody>${preview.map(row => `<tr>${columns.map(column => `<td>${escapeHtml(row[column] == null ? '—' : String(row[column]))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  }
+}
+
+function formatStat(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  const number = Number(value);
+  return Number.isFinite(number) ? number.toLocaleString(undefined, { maximumFractionDigits: 4 }) : '—';
+}
+
+async function handleCsvAnalysis(event) {
+  event.preventDefault();
+  const input = $('#analytics-csv-file');
+  const errorBox = $('#csv-analysis-error');
+  const button = $('#analyse-csv-button');
+  errorBox.classList.add('hidden');
+  errorBox.textContent = '';
+  if (!input.files || !input.files[0]) {
+    errorBox.textContent = 'Choose a CSV file first.';
+    errorBox.classList.remove('hidden');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+  button.disabled = true;
+  button.innerHTML = 'Analysing…';
+  try {
+    const data = await requestJson('/api/analytics/upload-csv', { method: 'POST', body: formData });
+    renderCsvAnalysis(data);
+    toast('CSV data profile created. The file was not saved.', 'success', 'Analysis complete');
+  } catch (error) {
+    errorBox.textContent = error.message || 'Could not analyse the CSV.';
+    errorBox.classList.remove('hidden');
+  } finally {
+    button.disabled = false;
+    button.innerHTML = 'Analyse dataset <span>↗</span>';
+  }
 }
 
 async function loadLibrary() {
@@ -431,6 +542,14 @@ function debounce(fn, delay) {
   let timer;
   return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
 }
+
+
+$('#refresh-analytics').addEventListener('click', loadAnalytics);
+$('#csv-analysis-form').addEventListener('submit', handleCsvAnalysis);
+$('#analytics-csv-file').addEventListener('change', () => {
+  const file = $('#analytics-csv-file').files?.[0];
+  if (file) $('.csv-dropzone strong').textContent = file.name;
+});
 
 // Initialise metrics and collection counts at page load.
 loadDashboard();

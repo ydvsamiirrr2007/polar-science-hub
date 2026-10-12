@@ -9,11 +9,14 @@ import json
 import os
 import re
 import sqlite3
+import io
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import requests
+import pandas as pd
 from flask import Flask, jsonify, render_template, request, send_from_directory, abort, redirect
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -481,6 +484,189 @@ def generate_outreach_content():
             )
         mode = "template"
     return jsonify({"content": content, "mode": mode, "sources": [{"title": r["title"], "url": r["url"]} for r in matches]})
+
+
+@app.get("/api/analytics")
+def analytics_overview():
+    """Return repository metadata aggregates for the Data Analytics workspace.
+
+    These statistics describe the records stored in this portal. They are not
+    scientific conclusions about Earth's polar regions.
+    """
+    with get_db() as conn:
+        totals = conn.execute(
+            """SELECT COUNT(*) AS total_resources,
+                      COALESCE(SUM(views), 0) AS total_views,
+                      COALESCE(SUM(downloads), 0) AS total_downloads,
+                      COUNT(DISTINCT region) AS region_count,
+                      COUNT(DISTINCT category) AS category_count,
+                      SUM(CASE WHEN type = 'Dataset' THEN 1 ELSE 0 END) AS dataset_count,
+                      SUM(CASE WHEN year IS NULL THEN 1 ELSE 0 END) AS missing_year_count,
+                      SUM(CASE WHEN url IS NULL OR TRIM(url) = '' THEN 1 ELSE 0 END) AS missing_url_count,
+                      AVG(year) AS average_publication_year
+               FROM resources"""
+        ).fetchone()
+        by_type = conn.execute(
+            "SELECT type AS label, COUNT(*) AS count FROM resources GROUP BY type ORDER BY count DESC, label"
+        ).fetchall()
+        by_region = conn.execute(
+            "SELECT region AS label, COUNT(*) AS count FROM resources GROUP BY region ORDER BY count DESC, label"
+        ).fetchall()
+        by_category = conn.execute(
+            "SELECT category AS label, COUNT(*) AS count FROM resources GROUP BY category ORDER BY count DESC, label LIMIT 10"
+        ).fetchall()
+        by_year = conn.execute(
+            "SELECT year AS label, COUNT(*) AS count FROM resources WHERE year IS NOT NULL GROUP BY year ORDER BY year"
+        ).fetchall()
+        popular = conn.execute(
+            "SELECT title, type, category, region, views, downloads FROM resources ORDER BY (views + downloads) DESC, title LIMIT 5"
+        ).fetchall()
+        activity = conn.execute(
+            "SELECT action AS label, COUNT(*) AS count FROM activity GROUP BY action ORDER BY count DESC, label"
+        ).fetchall()
+        quality = conn.execute(
+            """SELECT
+                 SUM(CASE WHEN TRIM(COALESCE(title, '')) = '' THEN 1 ELSE 0 END) AS missing_title,
+                 SUM(CASE WHEN TRIM(COALESCE(category, '')) = '' THEN 1 ELSE 0 END) AS missing_category,
+                 SUM(CASE WHEN TRIM(COALESCE(region, '')) = '' THEN 1 ELSE 0 END) AS missing_region,
+                 SUM(CASE WHEN year IS NOT NULL AND (year < 1900 OR year > 2100) THEN 1 ELSE 0 END) AS invalid_year
+               FROM resources"""
+        ).fetchone()
+
+    total = dict(totals)
+    avg_year = total.get("average_publication_year")
+    total["average_publication_year"] = round(float(avg_year), 1) if avg_year is not None else None
+    for key, value in list(total.items()):
+        if value is None and key != "average_publication_year":
+            total[key] = 0
+    return jsonify({
+        "totals": total,
+        "by_type": [dict(row) for row in by_type],
+        "by_region": [dict(row) for row in by_region],
+        "by_category": [dict(row) for row in by_category],
+        "by_year": [dict(row) for row in by_year],
+        "popular": [dict(row) for row in popular],
+        "activity": [dict(row) for row in activity],
+        "quality": {key: int(value or 0) for key, value in dict(quality).items()},
+    })
+
+
+@app.post("/api/analytics/upload-csv")
+def analyze_csv_dataset():
+    """Profile an uploaded CSV in memory; uploaded analysis data is not retained."""
+    upload = request.files.get("file")
+    if not upload or not upload.filename:
+        return jsonify({"error": "Choose a CSV file to analyse."}), 400
+    if not upload.filename.lower().endswith(".csv"):
+        return jsonify({"error": "Please upload a .csv file."}), 400
+
+    raw = upload.stream.read(10 * 1024 * 1024 + 1)
+    if len(raw) > 10 * 1024 * 1024:
+        return jsonify({"error": "CSV files must be 10 MB or smaller."}), 413
+    if not raw.strip():
+        return jsonify({"error": "The CSV file is empty."}), 400
+
+    try:
+        # Limit the number of rows/columns to keep a public demo responsive.
+        frame = pd.read_csv(io.BytesIO(raw), nrows=100001, low_memory=False)
+    except (pd.errors.ParserError, UnicodeDecodeError, ValueError) as exc:
+        return jsonify({"error": f"Could not read this CSV. Check its encoding and delimiters. Details: {str(exc)[:180]}"}), 400
+    except Exception as exc:
+        app.logger.exception("CSV profiling failed while reading a file")
+        return jsonify({"error": f"Could not analyse this file: {str(exc)[:180]}"}), 400
+
+    if frame.empty:
+        return jsonify({"error": "The CSV has column headers but no data rows."}), 400
+    if len(frame) > 100000:
+        return jsonify({"error": "This demo accepts up to 100,000 rows per CSV."}), 400
+    if len(frame.columns) > 100:
+        return jsonify({"error": "This demo accepts up to 100 columns per CSV."}), 400
+    # Normalize header labels for display without mutating source data values.
+    frame.columns = [str(column).strip() or f"Column {index + 1}" for index, column in enumerate(frame.columns)]
+    row_count, column_count = frame.shape
+    missing_by_column = frame.isna().sum()
+    total_cells = row_count * column_count
+    missing_cells = int(missing_by_column.sum())
+    duplicate_rows = int(frame.duplicated().sum())
+    numeric_columns = list(frame.select_dtypes(include="number").columns)
+    categorical_columns = [column for column in frame.columns if column not in numeric_columns]
+
+    column_profile = []
+    for column in frame.columns:
+        series = frame[column]
+        examples = []
+        for value in series.dropna().astype(str).head(3).tolist():
+            examples.append(value[:100])
+        column_profile.append({
+            "name": str(column),
+            "data_type": str(series.dtype),
+            "missing_count": int(series.isna().sum()),
+            "missing_percent": round(float(series.isna().mean() * 100), 1),
+            "unique_values": int(series.nunique(dropna=True)),
+            "examples": examples,
+        })
+
+    numeric_summary = []
+    for column in numeric_columns[:15]:
+        series = pd.to_numeric(frame[column], errors="coerce")
+        numeric_summary.append({
+            "column": str(column),
+            "count": int(series.count()),
+            "mean": _safe_stat(series.mean()),
+            "median": _safe_stat(series.median()),
+            "min": _safe_stat(series.min()),
+            "max": _safe_stat(series.max()),
+            "std_dev": _safe_stat(series.std()),
+        })
+
+    categorical_summary = []
+    for column in categorical_columns[:10]:
+        counts = frame[column].fillna("(missing)").astype(str).value_counts().head(5)
+        categorical_summary.append({
+            "column": str(column),
+            "values": [{"value": str(value)[:100], "count": int(count)} for value, count in counts.items()],
+        })
+
+    preview = json.loads(frame.head(8).to_json(orient="records", date_format="iso"))
+    insights = [f"Loaded {row_count:,} rows across {column_count} columns."]
+    insights.append(f"{len(numeric_columns)} numeric column(s) and {len(categorical_columns)} non-numeric column(s) detected.")
+    if missing_cells:
+        insights.append(f"{missing_cells:,} missing cell(s) found ({(missing_cells / total_cells * 100):.1f}% of all cells). Inspect the column profile before modelling or charting.")
+    else:
+        insights.append("No missing cells were detected in this file.")
+    if duplicate_rows:
+        insights.append(f"{duplicate_rows:,} duplicate row(s) detected; review them before removing anything.")
+    else:
+        insights.append("No exact duplicate rows were detected.")
+    if column_count > 0:
+        highest_missing = missing_by_column.sort_values(ascending=False)
+        if len(highest_missing) and int(highest_missing.iloc[0]) > 0:
+            insights.append(f"Column with the most missing values: '{highest_missing.index[0]}' ({int(highest_missing.iloc[0])} missing).")
+
+    return jsonify({
+        "filename": secure_filename(upload.filename) or "uploaded.csv",
+        "rows": int(row_count),
+        "columns": int(column_count),
+        "numeric_column_count": len(numeric_columns),
+        "categorical_column_count": len(categorical_columns),
+        "missing_cells": missing_cells,
+        "missing_percent": round((missing_cells / total_cells * 100), 1) if total_cells else 0,
+        "duplicate_rows": duplicate_rows,
+        "column_profile": column_profile,
+        "numeric_summary": numeric_summary,
+        "categorical_summary": categorical_summary,
+        "preview": preview,
+        "insights": insights,
+        "retained": False,
+    })
+
+
+def _safe_stat(value: Any) -> float | None:
+    """Return a finite, JSON-safe numeric statistic rounded for display."""
+    if value is None or pd.isna(value):
+        return None
+    numeric = float(value)
+    return round(numeric, 4) if math.isfinite(numeric) else None
 
 
 @app.errorhandler(413)

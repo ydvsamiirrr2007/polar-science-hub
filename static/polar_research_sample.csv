@@ -1,0 +1,21 @@
+record_id,year,region,research_theme,resource_count,quality_score,data_status
+S001,2018,Arctic,Sea ice,12,88,SYNTHETIC_DEMO
+S002,2018,Antarctic,Glaciers,8,91,SYNTHETIC_DEMO
+S003,2019,Arctic,Permafrost,15,84,SYNTHETIC_DEMO
+S004,2019,Southern Ocean,Oceanography,10,79,SYNTHETIC_DEMO
+S005,2020,Antarctic,Sea ice,18,92,SYNTHETIC_DEMO
+S006,2020,Arctic,Biodiversity,7,73,SYNTHETIC_DEMO
+S007,2021,Arctic,Sea ice,20,89,SYNTHETIC_DEMO
+S008,2021,Antarctic,Climate,11,86,SYNTHETIC_DEMO
+S009,2022,Southern Ocean,Oceanography,16,82,SYNTHETIC_DEMO
+S010,2022,Arctic,Permafrost,14,77,SYNTHETIC_DEMO
+S011,2023,Antarctic,Glaciers,19,94,SYNTHETIC_DEMO
+S012,2023,Arctic,Climate,22,90,SYNTHETIC_DEMO
+S013,2024,Arctic,Sea ice,25,93,SYNTHETIC_DEMO
+S014,2024,Southern Ocean,Biodiversity,13,81,SYNTHETIC_DEMO
+S015,2025,Antarctic,Climate,21,87,SYNTHETIC_DEMO
+S016,2025,Arctic,Permafrost,17,85,SYNTHETIC_DEMO
+S017,2026,Arctic,Sea ice,24,95,SYNTHETIC_DEMO
+S018,2026,Antarctic,Glaciers,16,89,SYNTHETIC_DEMO
+S019,2026,Southern Ocean,Oceanography,14,83,SYNTHETIC_DEMO
+S020,2026,Antarctic,Biodiversity,9,78,SYNTHETIC_DEMO

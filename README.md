@@ -7,6 +7,9 @@ The goal is to make polar-science resources easier to discover, understand and t
 ## What is included
 
 - **Overview dashboard:** resource, view and download counters; topic distribution; recent records.
+- **Data Analytics workspace:** SQL-backed repository summaries, Chart.js visualisations by type/region/year/topic, metadata quality checks, most-engaged resource records.
+- **CSV profiler:** upload a CSV (up to 10 MB / 100,000 rows), inspect column types, missing values, duplicates, descriptive statistics and an eight-row preview. The uploaded CSV is analysed in memory and is not retained.
+- **Synthetic example CSV:** download `static/polar_research_sample.csv` to test the analysis workflow; it is clearly labelled as demo data, not real scientific observations.
 - **Knowledge library:** search by text and filter by topic, region and resource type.
 - **Resource management:** add a source URL, abstract/notes, tags and optionally attach a file (up to 30 MB).
 - **Research assistant:** retrieves records from the local repository. With an optional OpenAI API key, it can compose an answer grounded in the selected record notes. Without a key, local retrieval works and does not pretend to be a generative model.
@@ -17,7 +20,9 @@ The goal is to make polar-science resources easier to discover, understand and t
 ## Tech stack
 
 - Python + Flask (backend/API)
-- SQLite (local database)
+- SQLite (local database and SQL aggregations)
+- Pandas (CSV profiling and descriptive statistics)
+- Chart.js (interactive browser charts, loaded from a CDN)
 - HTML, CSS and vanilla JavaScript (frontend)
 - Optional OpenAI Responses API integration for grounded answer/draft generation
 
@@ -34,7 +39,7 @@ The goal is to make polar-science resources easier to discover, understand and t
 4. Create a virtual environment:
 
    ```powershell
-   py -m venv .venv
+   python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    ```
 
@@ -116,3 +121,27 @@ Uploaded files are saved in `uploads/`. The database is `polar_hub.db`. Both are
 ## Important limitations / before deployment
 
 This is a local prototype, not a production multi-user service. It currently does not include login/roles, cloud storage, full-text parsing for uploaded PDFs, semantic vector search, admin approval workflows, or production security hardening. Flask debug mode is enabled for local development. Turn debug off and add authentication, CSRF protections, upload scanning, rate limiting, proper secret management and deployment configuration before public hosting.
+
+## Deploy a public shareable link (Render)
+
+This project includes `render.yaml` for deploying as a Render web service.
+
+1. Create a new GitHub repository and upload the project files (the contents of this folder, not the ZIP file itself).
+2. Do not upload `.env`, `.venv`, `polar_hub.db`, or real/private uploaded files.
+3. Sign in at https://render.com and choose **New + → Blueprint**, then connect the GitHub repository containing `render.yaml`.
+4. Review the detected `polar-science-hub` service and deploy it. Render should provide a public `https://...onrender.com` URL after deployment succeeds.
+5. Open the public URL, then share it with your teammate.
+
+**Demo limitations:** The free Render service uses an ephemeral filesystem. The SQLite database and uploaded files can be reset on restarts, spin-downs, or redeploys. Free instances can sleep after 15 minutes of inactivity and may take around a minute to wake. Do not use this configuration for important or private data. For persistent shared data, switch to a managed database and appropriate file storage before production use.
+
+The deployment starts with Gunicorn and checks `/api/health`. The optional AI key can be added in the Render service's environment settings as `OPENAI_API_KEY`; do not commit API keys into GitHub.
+
+
+## Data Analytics demo
+
+1. Open the **Data analytics** page from the left navigation.
+2. Review charts for the current library. They describe repository metadata (what is stored), not scientific evidence about polar environments.
+3. Click **Download sample CSV** and upload the downloaded file under **Analyse your own CSV**.
+4. Review the data profile, missing-value counts, duplicate rows, numeric summary statistics, categorical frequencies and preview. The uploaded CSV is processed in memory and not retained by the app.
+
+The sample is synthetic and for testing only. Do not cite its figures as actual Arctic or Antarctic observations.

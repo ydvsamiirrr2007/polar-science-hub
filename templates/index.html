@@ -23,6 +23,7 @@
       <nav class="side-nav" aria-label="Main navigation">
         <button class="nav-item active" data-page="overview"><span class="nav-icon">◫</span><span>Overview</span></button>
         <button class="nav-item" data-page="library"><span class="nav-icon">▤</span><span>Knowledge library</span><span class="nav-count" id="nav-resource-count">06</span></button>
+        <button class="nav-item" data-page="analytics"><span class="nav-icon">▥</span><span>Data analytics</span><span class="nav-beta">NEW</span></button>
         <button class="nav-item" data-page="assistant"><span class="nav-icon">✳</span><span>Ask Polar AI</span><span class="nav-beta">BETA</span></button>
         <button class="nav-item" data-page="studio"><span class="nav-icon">◈</span><span>Media studio</span></button>
       </nav>
@@ -115,6 +116,50 @@
           <div class="bottom-note"><span class="note-icon">ⓘ</span><span>Polar Atlas is a prototype. Follow original source links and verify citations, dates and usage rights before reusing scientific material.</span></div>
         </section>
 
+        <section class="page-section hidden" id="page-analytics">
+          <div class="section-heading-row analytics-heading">
+            <div><div class="eyebrow"><span class="live-dot"></span> DATA ANALYTICS WORKSPACE</div><h1>Research <span>analytics.</span></h1><p class="page-subtitle">Explore repository metadata, check data quality, and profile your own CSV datasets.</p></div>
+            <a class="outline-button sample-download" href="{{ url_for('static', filename='polar_research_sample.csv') }}" download>↓ Download sample CSV</a>
+          </div>
+          <div class="analytics-disclaimer"><strong>Read this first:</strong> repository charts describe the records saved in Polar Atlas. The sample CSV is synthetic test data, not real polar observations.</div>
+          <div class="stats-grid analytics-kpis">
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">Library records</span><span class="stat-icon icon-cyan">▤</span></div><div class="stat-value" id="analytics-total-resources">—</div><div class="stat-foot">All saved resource records</div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">Dataset resources</span><span class="stat-icon icon-violet">◫</span></div><div class="stat-value" id="analytics-dataset-count">—</div><div class="stat-foot">Records marked as datasets</div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">Regions represented</span><span class="stat-icon icon-green">◎</span></div><div class="stat-value" id="analytics-region-count">—</div><div class="stat-foot">Distinct region labels in library</div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">Recorded engagement</span><span class="stat-icon icon-orange">↗</span></div><div class="stat-value" id="analytics-engagement">—</div><div class="stat-foot">Views plus source/file opens</div></article>
+          </div>
+          <div class="analytics-chart-grid">
+            <section class="panel analytics-panel"><div class="panel-heading"><div><h3>Resources by type</h3><p>Composition of the saved repository</p></div><span class="chart-label">COUNT</span></div><div class="chart-frame"><canvas id="analytics-type-chart" aria-label="Resources by type chart"></canvas></div></section>
+            <section class="panel analytics-panel"><div class="panel-heading"><div><h3>Resources by region</h3><p>How records are tagged geographically</p></div><span class="chart-label">COUNT</span></div><div class="chart-frame"><canvas id="analytics-region-chart" aria-label="Resources by region chart"></canvas></div></section>
+            <section class="panel analytics-panel"><div class="panel-heading"><div><h3>Publication-year distribution</h3><p>Counts by the year attached to each record</p></div><span class="chart-label">YEAR</span></div><div class="chart-frame"><canvas id="analytics-year-chart" aria-label="Resources by publication year chart"></canvas></div></section>
+            <section class="panel analytics-panel"><div class="panel-heading"><div><h3>Top knowledge topics</h3><p>Most common category labels</p></div><span class="chart-label">TOP 10</span></div><div class="chart-frame"><canvas id="analytics-topic-chart" aria-label="Top knowledge topics chart"></canvas></div></section>
+          </div>
+          <section class="panel data-quality-panel">
+            <div class="panel-heading"><div><h3>Repository data-quality checks</h3><p>Find metadata gaps before drawing conclusions</p></div><button class="text-button" id="refresh-analytics">Refresh metrics ↻</button></div>
+            <div class="quality-grid"><div class="quality-stat"><span>Records missing year</span><strong id="quality-missing-year">—</strong></div><div class="quality-stat"><span>Records missing source URL</span><strong id="quality-missing-url">—</strong></div><div class="quality-stat"><span>Missing titles</span><strong id="quality-missing-title">—</strong></div><div class="quality-stat"><span>Invalid publication years</span><strong id="quality-invalid-year">—</strong></div></div>
+            <div class="table-responsive"><table class="resource-table analytics-data-table"><thead><tr><th>RESOURCE WITH MOST ENGAGEMENT</th><th>TYPE</th><th>REGION</th><th>VIEWS</th><th>OPENS</th></tr></thead><tbody id="analytics-popular-rows"><tr><td colspan="5" class="table-loading">Loading analytics…</td></tr></tbody></table></div>
+          </section>
+          <section class="panel csv-analysis-panel">
+            <div class="panel-heading"><div><h3>Analyse your own CSV</h3><p>Upload a dataset to get descriptive statistics, missing-value checks, duplicate checks and a preview.</p></div><span class="studio-icon">▥</span></div>
+            <form id="csv-analysis-form" class="csv-upload-form" enctype="multipart/form-data">
+              <label class="csv-dropzone" for="analytics-csv-file"><span class="csv-drop-icon">↑</span><strong>Choose a CSV dataset</strong><span>CSV only · Maximum 10 MB · Up to 100,000 rows</span><input id="analytics-csv-file" name="file" type="file" accept=".csv,text/csv" required></label>
+              <div class="csv-actions"><span class="field-hint">The uploaded file is analysed in memory and is not saved to the server.</span><button class="primary-button" id="analyse-csv-button" type="submit">Analyse dataset <span>↗</span></button></div>
+              <div class="form-error hidden" id="csv-analysis-error" role="alert"></div>
+            </form>
+            <div class="csv-results hidden" id="csv-analysis-results" aria-live="polite">
+              <div class="csv-result-heading"><div><span class="small-label">DATA PROFILE</span><h3 id="csv-result-filename">Dataset summary</h3></div><span class="analysis-status">PROFILE COMPLETE</span></div>
+              <div class="csv-summary-stats"><div><span>Rows</span><strong id="csv-rows">—</strong></div><div><span>Columns</span><strong id="csv-columns">—</strong></div><div><span>Missing cells</span><strong id="csv-missing">—</strong></div><div><span>Duplicate rows</span><strong id="csv-duplicates">—</strong></div></div>
+              <div class="csv-insights" id="csv-insights"></div>
+              <div class="csv-table-block"><h4>Column profile</h4><div class="table-responsive"><table class="resource-table analytics-data-table"><thead><tr><th>COLUMN</th><th>DATA TYPE</th><th>MISSING</th><th>UNIQUE</th><th>EXAMPLES</th></tr></thead><tbody id="csv-column-rows"></tbody></table></div></div>
+              <div class="csv-table-block"><h4>Numeric summary</h4><div class="table-responsive"><table class="resource-table analytics-data-table"><thead><tr><th>NUMERIC COLUMN</th><th>COUNT</th><th>MEAN</th><th>MEDIAN</th><th>MIN</th><th>MAX</th><th>STD. DEV.</th></tr></thead><tbody id="csv-numeric-rows"></tbody></table></div></div>
+              <div class="csv-table-block"><h4>Categorical breakdowns</h4><div id="csv-categorical-summary" class="csv-categorical-summary"></div></div>
+              <div class="csv-table-block"><h4>First 8 rows</h4><div class="table-responsive" id="csv-preview-wrap"></div></div>
+            </div>
+          </section>
+          <div class="bottom-note"><span class="note-icon">ⓘ</span><span>Analytical summaries are descriptive. Check the dataset's provenance, units, collection method, missingness and licensing before making scientific claims.</span></div>
+        </section>
+
+
         <section class="page-section hidden" id="page-library">
           <div class="section-heading-row"><div><div class="eyebrow">THE REPOSITORY</div><h1>Knowledge <span>library.</span></h1><p class="page-subtitle">Search articles, reports, datasets and media in one place.</p></div><button class="primary-button" id="library-add-resource">＋ Add resource</button></div>
           <div class="library-toolbar">
@@ -182,6 +227,7 @@
   <div class="modal-backdrop hidden" id="detail-modal-backdrop" role="presentation"><section class="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div class="modal-header"><div><div class="eyebrow">RESOURCE DETAILS</div><h2 id="detail-title">Resource</h2></div><button class="icon-button close-detail" type="button" aria-label="Close details">×</button></div><div id="detail-content" class="detail-content"></div></section></div>
   <div class="modal-backdrop hidden" id="about-modal-backdrop" role="presentation"><section class="modal about-modal" role="dialog" aria-modal="true" aria-labelledby="about-title"><div class="modal-header"><div><div class="eyebrow">ABOUT THIS PROJECT</div><h2 id="about-title">A prototype for polar knowledge.</h2></div><button class="icon-button close-about" type="button" aria-label="Close about dialog">×</button></div><p>Polar Atlas brings research links, datasets and outreach workflows together in a single interface. It starts with a small demo collection and lets your team add its own resources.</p><div class="about-points"><div><strong>Knowledge repository</strong><span>Search, filter, open and upload resources.</span></div><div><strong>Research assistant</strong><span>Local matching works without an API key; an optional API can compose grounded answers.</span></div><div><strong>Media studio</strong><span>Create starting drafts for public science communication.</span></div></div><div class="about-warning">This is a hackathon MVP, not a peer-reviewed scientific source or a production-ready multi-user platform.</div><div class="modal-actions"><button class="primary-button close-about" type="button">Got it</button></div></section></div>
   <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" crossorigin="anonymous"></script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
