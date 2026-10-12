@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#081a2b">
+  <meta name="description" content="A collaborative knowledge hub for polar science research, outreach and media.">
+  <title>Polar Atlas — Polar Science Knowledge Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#overview" aria-label="Polar Atlas overview">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="brand-copy"><strong>polar<span>atlas</span></strong><small>SCIENCE, CONNECTED</small></span>
+      </a>
+
+      <div class="workspace-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-page="overview"><span class="nav-icon">◫</span><span>Overview</span></button>
+        <button class="nav-item" data-page="library"><span class="nav-icon">▤</span><span>Knowledge library</span><span class="nav-count" id="nav-resource-count">06</span></button>
+        <button class="nav-item" data-page="assistant"><span class="nav-icon">✳</span><span>Ask Polar AI</span><span class="nav-beta">BETA</span></button>
+        <button class="nav-item" data-page="studio"><span class="nav-icon">◈</span><span>Media studio</span></button>
+      </nav>
+
+      <div class="sidebar-divider"></div>
+      <div class="workspace-label">EXPLORE BY</div>
+      <nav class="side-nav topic-nav" aria-label="Explore by topic">
+        <button class="topic-item" data-category="Cryosphere"><span class="topic-dot blue"></span>Cryosphere</button>
+        <button class="topic-item" data-category="Climate Change"><span class="topic-dot coral"></span>Climate change</button>
+        <button class="topic-item" data-category="Satellite Imagery"><span class="topic-dot violet"></span>Satellite imagery</button>
+        <button class="topic-item" data-category="Data & Tools"><span class="topic-dot green"></span>Data &amp; tools</button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-help">
+        <div class="help-orbit"><span>✦</span></div>
+        <strong>Curiosity travels far.</strong>
+        <p>Make polar science easier to discover and share.</p>
+        <button class="help-link" data-page="studio">Create an outreach piece <span>↗</span></button>
+      </div>
+      <div class="profile-row">
+        <div class="avatar">PA</div>
+        <div class="profile-copy"><strong>Polar Atlas Team</strong><small>Research workspace</small></div>
+        <span class="profile-menu">•••</span>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu icon-button" id="mobile-menu" aria-label="Open menu">☰</button>
+        <div class="breadcrumb"><span>Workspace</span><span class="crumb-slash">/</span><strong id="current-crumb">Overview</strong></div>
+        <div class="topbar-actions">
+          <label class="global-search"><span aria-hidden="true">⌕</span><input id="global-search" type="search" placeholder="Search knowledge base…" autocomplete="off"><kbd>↵</kbd></label>
+          <button class="icon-button top-icon" id="help-button" aria-label="About this demo" title="About this demo">?</button>
+          <button class="user-mini" aria-label="Workspace team">PA</button>
+          <button class="primary-button compact" id="top-add-resource"><span>＋</span> Add resource</button>
+        </div>
+      </header>
+
+      <div class="page-wrap">
+        <section class="page-section" id="page-overview">
+          <div class="welcome-row">
+            <div>
+              <div class="eyebrow"><span class="live-dot"></span> POLAR KNOWLEDGE NETWORK</div>
+              <h1>Knowledge for a <span>changing planet.</span></h1>
+              <p class="page-subtitle">Discover research, connect the dots, and bring polar science closer to everyone.</p>
+            </div>
+            <div class="date-chip"><span class="date-spark">✦</span><span><strong>Explore the extraordinary</strong><small>Arctic · Antarctic · Southern Ocean</small></span></div>
+          </div>
+
+          <section class="hero-banner" aria-label="Polar science introduction">
+            <div class="hero-copy">
+              <div class="hero-pill"><span>✧</span> THIS WEEK IN POLAR SCIENCE</div>
+              <h2>Big questions.<br>Small planet. <em>Deep ice.</em></h2>
+              <p>One home for the reports, observations, datasets and stories that help us understand Earth's frozen frontiers.</p>
+              <button class="light-button" data-page="library">Explore the knowledge library <span>→</span></button>
+            </div>
+            <div class="ice-art" aria-hidden="true">
+              <div class="ice-moon"></div><div class="ice-star star-a">✦</div><div class="ice-star star-b">·</div>
+              <div class="iceberg iceberg-back"></div><div class="iceberg iceberg-front"></div><div class="ice-reflection"></div>
+              <div class="ice-label"><span class="label-line"></span><span>66° 33′ N / S</span></div>
+            </div>
+            <div class="hero-grain"></div>
+          </section>
+
+          <div class="stats-grid">
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">Total resources</span><span class="stat-icon icon-cyan">▤</span></div><div class="stat-value" id="stat-resources">—</div><div class="stat-foot"><span class="stat-indicator">↗</span>Curated in this workspace</div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">Knowledge views</span><span class="stat-icon icon-violet">◉</span></div><div class="stat-value" id="stat-views">—</div><div class="stat-foot">Resource detail visits</div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">Downloads / opens</span><span class="stat-icon icon-orange">⇩</span></div><div class="stat-value" id="stat-downloads">—</div><div class="stat-foot">Files and source links</div></article>
+            <article class="stat-card"><div class="stat-top"><span class="stat-label">Research topics</span><span class="stat-icon icon-green">✳</span></div><div class="stat-value" id="stat-topics">—</div><div class="stat-foot">Distinct topic categories</div></article>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel topic-panel">
+              <div class="panel-heading"><div><h3>Knowledge landscape</h3><p>How your library is organised</p></div><button class="text-button" data-page="library">View library <span>→</span></button></div>
+              <div class="landscape-content"><div id="category-chart" class="category-chart"></div><div id="category-legend" class="category-legend"></div></div>
+            </section>
+            <section class="panel spotlight-panel">
+              <div class="panel-heading"><div><h3>Research spotlight</h3><p>A place to start exploring</p></div><span class="spotlight-mark">✦</span></div>
+              <div class="spotlight-visual"><div class="spotlight-orbit orbit-one"></div><div class="spotlight-orbit orbit-two"></div><div class="spotlight-globe">◌</div><span class="spotlight-coord">78° 55′ S<br>11° 56′ W</span><span class="spotlight-caption">THE CRYOSPHERE</span></div>
+              <h4>Reading the frozen parts of Earth</h4><p>Explore ice, snow, glaciers and sea-ice research through linked datasets and expert analysis.</p>
+              <button class="outline-button" data-category="Cryosphere">Explore cryosphere <span>→</span></button>
+            </section>
+          </div>
+
+          <section class="panel recent-panel">
+            <div class="panel-heading"><div><h3>Recently added to the library</h3><p>Follow a source to continue your research</p></div><button class="text-button" data-page="library">View all resources <span>→</span></button></div>
+            <div class="resource-table-wrap"><table class="resource-table"><thead><tr><th>RESOURCE</th><th>TOPIC</th><th>REGION</th><th>YEAR</th><th></th></tr></thead><tbody id="recent-resource-rows"><tr><td colspan="5" class="table-loading">Loading resources…</td></tr></tbody></table></div>
+          </section>
+          <div class="bottom-note"><span class="note-icon">ⓘ</span><span>Polar Atlas is a prototype. Follow original source links and verify citations, dates and usage rights before reusing scientific material.</span></div>
+        </section>
+
+        <section class="page-section hidden" id="page-library">
+          <div class="section-heading-row"><div><div class="eyebrow">THE REPOSITORY</div><h1>Knowledge <span>library.</span></h1><p class="page-subtitle">Search articles, reports, datasets and media in one place.</p></div><button class="primary-button" id="library-add-resource">＋ Add resource</button></div>
+          <div class="library-toolbar">
+            <label class="library-search"><span>⌕</span><input id="library-search" type="search" placeholder="Search by title, topic, author or tag…"></label>
+            <select id="filter-category" aria-label="Filter by category"><option value="">All topics</option></select>
+            <select id="filter-region" aria-label="Filter by region"><option value="">All regions</option></select>
+            <select id="filter-type" aria-label="Filter by resource type"><option value="">All types</option></select>
+          </div>
+          <div class="library-results-line"><span id="library-result-count">Loading collection…</span><span class="sort-label">Sorted by featured &amp; latest</span></div>
+          <div class="resource-grid" id="resource-grid"><div class="loading-card">Gathering the polar knowledge…</div></div>
+          <div class="empty-state hidden" id="library-empty"><div>⌕</div><h3>No matching resources</h3><p>Try a different term or clear one of the filters.</p><button class="outline-button" id="clear-filters">Clear filters</button></div>
+        </section>
+
+        <section class="page-section hidden" id="page-assistant">
+          <div class="section-heading-row assistant-title-row"><div><div class="eyebrow"><span class="live-dot"></span> RESEARCH COMPANION</div><h1>Ask Polar <span>AI.</span></h1><p class="page-subtitle">Ask a question. Find relevant sources. Keep the evidence close.</p></div><div class="mode-chip"><span class="mode-dot"></span><span id="assistant-mode-label">Local mode available</span></div></div>
+          <div class="assistant-layout">
+            <section class="assistant-main panel">
+              <div class="assistant-welcome"><div class="assistant-orb">✳</div><div><h2>What are you curious about?</h2><p>Answers are grounded in the resources currently stored in this workspace.</p></div></div>
+              <div class="suggested-prompts"><span>TRY ASKING</span><button class="prompt-chip" data-question="What can sea-ice records tell us about polar climate?">What can sea-ice records tell us?</button><button class="prompt-chip" data-question="Where can I find reliable polar datasets?">Find reliable polar datasets</button><button class="prompt-chip" data-question="How can I explain polar science to school students?">Explain polar science to students</button></div>
+              <div id="chat-messages" class="chat-messages"><div class="chat-empty"><div class="empty-chat-icon">⌁</div><strong>Your research conversation starts here.</strong><p>Ask about a topic and the assistant will surface related records from the library.</p></div></div>
+              <form id="ask-form" class="ask-form"><textarea id="ask-question" rows="2" placeholder="Ask a question about polar research…" aria-label="Your question" required maxlength="1200"></textarea><div class="ask-form-bottom"><span><span class="secure-dot"></span> Answers reference this workspace's resources</span><button class="primary-button" id="ask-submit" type="submit">Ask question <span>↗</span></button></div></form>
+            </section>
+            <aside class="assistant-sidebar"><div class="panel assistant-tip"><div class="tip-icon">✦</div><h3>Research with context</h3><p>The assistant searches the repository first. When an AI API key is configured, it can compose a grounded answer from the matched source notes.</p><div class="tip-divider"></div><div class="tip-rule"><span>01</span><div><strong>Ask specifically</strong><small>Name the topic, region or time period.</small></div></div><div class="tip-rule"><span>02</span><div><strong>Open the sources</strong><small>Check primary records before citing findings.</small></div></div><div class="tip-rule"><span>03</span><div><strong>Verify the science</strong><small>AI output is a starting point, not an authority.</small></div></div></div><div class="panel source-card"><span class="small-label">QUICK SOURCE</span><h3>Sea Ice Today</h3><p>Analysis and daily imagery from the National Snow and Ice Data Center.</p><a href="https://nsidc.org/sea-ice-today/analyses" target="_blank" rel="noreferrer">Visit NSIDC <span>↗</span></a></div></aside>
+          </div>
+        </section>
+
+        <section class="page-section hidden" id="page-studio">
+          <div class="section-heading-row"><div><div class="eyebrow">SCIENCE COMMUNICATION</div><h1>Media <span>studio.</span></h1><p class="page-subtitle">Turn research topics into clear, audience-friendly outreach drafts.</p></div><div class="studio-spark">✧</div></div>
+          <div class="studio-layout"><section class="panel studio-form-panel"><div class="panel-heading"><div><h3>Build an outreach draft</h3><p>Choose a format, set an audience and enter a topic.</p></div><span class="studio-icon">◈</span></div>
+            <form id="studio-form" class="studio-form"><label for="studio-topic">What is your topic?</label><textarea id="studio-topic" rows="3" placeholder="e.g. Why Arctic sea ice matters for Earth's climate" required maxlength="500"></textarea>
+              <label>Choose a format</label><div class="format-options"><label class="format-option selected"><input type="radio" name="studio-format" value="social" checked><span class="format-icon">↗</span><strong>Social post</strong><small>Short &amp; shareable</small></label><label class="format-option"><input type="radio" name="studio-format" value="classroom"><span class="format-icon">▤</span><strong>Classroom explainer</strong><small>For student learning</small></label><label class="format-option"><input type="radio" name="studio-format" value="brief"><span class="format-icon">≋</span><strong>Research brief</strong><small>Evidence-focused</small></label><label class="format-option"><input type="radio" name="studio-format" value="newsletter"><span class="format-icon">✉</span><strong>Newsletter</strong><small>For subscribers</small></label></div>
+              <label for="studio-audience">Intended audience</label><select id="studio-audience"><option>general public</option><option>school students</option><option>university students</option><option>researchers</option><option>policy makers</option><option>science journalists</option></select>
+              <div class="form-bottom-note"><span>✦</span> Drafts need scientific and editorial review before publication.</div><button class="primary-button studio-submit" type="submit" id="studio-submit">Generate draft <span>↗</span></button>
+            </form></section>
+            <section class="panel studio-output-panel"><div class="output-heading"><div><span class="small-label">YOUR CANVAS</span><h3 id="studio-output-title">A blank canvas</h3></div><button class="icon-button" id="copy-draft" title="Copy draft" aria-label="Copy draft" disabled>▣</button></div><div id="studio-output" class="studio-output"><div class="output-placeholder"><div class="placeholder-art"><span>✦</span><i></i><b></b></div><h4>Your next science story starts here.</h4><p>Generated copy will appear in this space. Review every factual claim and link before sharing.</p></div></div><div class="output-footer"><span id="studio-output-meta">No draft generated yet</span><button class="text-button" id="regenerate-draft" disabled>Regenerate ↻</button></div></section></div>
+        </section>
+
+        <footer class="app-footer"><span>POLAR ATLAS <span class="footer-dot">●</span> KNOWLEDGE FOR A CHANGING PLANET</span><span>Built for discovery · Designed for sharing</span></footer>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="resource-modal-backdrop" role="presentation">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="resource-modal-title">
+      <div class="modal-header"><div><div class="eyebrow">ADD TO THE REPOSITORY</div><h2 id="resource-modal-title">Add a resource</h2></div><button class="icon-button close-modal" type="button" aria-label="Close dialog">×</button></div>
+      <form id="resource-form" class="resource-form" enctype="multipart/form-data">
+        <div class="form-grid"><div class="field full"><label for="resource-title">Resource title <span>*</span></label><input id="resource-title" name="title" type="text" required maxlength="180" placeholder="e.g. Antarctic ice-sheet observations"></div>
+          <div class="field"><label for="resource-type">Resource type</label><select id="resource-type" name="type"><option>Research Paper</option><option>Report</option><option>Dataset</option><option>Article</option><option>Image</option><option>Video</option><option>Other</option></select></div>
+          <div class="field"><label for="resource-category">Topic / category</label><input id="resource-category" name="category" list="category-options" required maxlength="80" placeholder="e.g. Cryosphere"><datalist id="category-options"><option value="Cryosphere"><option value="Climate Change"><option value="Data & Tools"><option value="Expeditions"><option value="Satellite Imagery"><option value="Ocean & Atmosphere"><option value="Biodiversity"></datalist></div>
+          <div class="field"><label for="resource-region">Polar region</label><select id="resource-region" name="region"><option>Both Poles</option><option>Arctic</option><option>Antarctic</option><option>Southern Ocean</option><option>Global</option><option>Other</option></select></div>
+          <div class="field"><label for="resource-year">Publication year</label><input id="resource-year" name="year" type="number" min="1900" max="2100" placeholder="2026"></div>
+          <div class="field full"><label for="resource-author">Author / organisation</label><input id="resource-author" name="author" type="text" maxlength="140" placeholder="Research team, institution or publisher"></div>
+          <div class="field full"><label for="resource-url">Source URL</label><input id="resource-url" name="url" type="url" placeholder="https://…"></div>
+          <div class="field full"><label for="resource-summary">Short description</label><textarea id="resource-summary" name="summary" rows="2" maxlength="1500" placeholder="What is this resource about? Why is it useful?"></textarea></div>
+          <div class="field full"><label for="resource-content">Notes / abstract <small>(used by the research assistant)</small></label><textarea id="resource-content" name="content" rows="3" maxlength="12000" placeholder="Paste an abstract or your own notes. Do not upload confidential material."></textarea></div>
+          <div class="field full"><label for="resource-tags">Search tags</label><input id="resource-tags" name="tags" type="text" maxlength="400" placeholder="sea ice, satellite, climate, fieldwork"></div>
+          <div class="field full"><label for="resource-file">Attach a file <small>(optional, up to 30 MB)</small></label><input id="resource-file" name="file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.mp4,.mov,.csv,.xlsx,.docx,.txt"><span class="field-hint">Allowed: PDF, common images/video, CSV, XLSX, DOCX and TXT.</span></div>
+        </div>
+        <div id="resource-form-error" class="form-error hidden" role="alert"></div>
+        <div class="modal-actions"><button class="outline-button close-modal" type="button">Cancel</button><button class="primary-button" type="submit" id="save-resource">Save to library <span>↗</span></button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="detail-modal-backdrop" role="presentation"><section class="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div class="modal-header"><div><div class="eyebrow">RESOURCE DETAILS</div><h2 id="detail-title">Resource</h2></div><button class="icon-button close-detail" type="button" aria-label="Close details">×</button></div><div id="detail-content" class="detail-content"></div></section></div>
+  <div class="modal-backdrop hidden" id="about-modal-backdrop" role="presentation"><section class="modal about-modal" role="dialog" aria-modal="true" aria-labelledby="about-title"><div class="modal-header"><div><div class="eyebrow">ABOUT THIS PROJECT</div><h2 id="about-title">A prototype for polar knowledge.</h2></div><button class="icon-button close-about" type="button" aria-label="Close about dialog">×</button></div><p>Polar Atlas brings research links, datasets and outreach workflows together in a single interface. It starts with a small demo collection and lets your team add its own resources.</p><div class="about-points"><div><strong>Knowledge repository</strong><span>Search, filter, open and upload resources.</span></div><div><strong>Research assistant</strong><span>Local matching works without an API key; an optional API can compose grounded answers.</span></div><div><strong>Media studio</strong><span>Create starting drafts for public science communication.</span></div></div><div class="about-warning">This is a hackathon MVP, not a peer-reviewed scientific source or a production-ready multi-user platform.</div><div class="modal-actions"><button class="primary-button close-about" type="button">Got it</button></div></section></div>
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
